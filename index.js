@@ -21,10 +21,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({ limit: '30mb', extended: 'true' }));
 
 
-app.use('/api',userRoutes);
+app.use('/api', userRoutes);
 
 
 
-app.listen(5000,()=>{
+app.listen(5000, () => {
     console.log("Server Connected.");
 })

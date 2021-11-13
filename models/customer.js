@@ -3,18 +3,18 @@ const mongoose = require('mongoose');
 
 const customerSchema = new mongoose.Schema(
     {
-        username:{
-            type:String,
-            required:true,
-            unique:true
+        username: {
+            type: String,
+            required: true,
+            unique: true
         },
-        password:{
-            type:String,
-            required:true
+        password: {
+            type: String,
+            required: true
         }
     }
 )
 
-const Customer = mongoose.model('Customer',customerSchema);
+const Customer = mongoose.model('Customer', customerSchema);
 
-module.exports=Customer;
+module.exports = Customer;
