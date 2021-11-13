@@ -1,41 +1,59 @@
 const Restaurant = require('../models/restaurant');
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
+const registerRestaurant = (req, res) => {
 
-const registerRestaurant = async (req, res) => {
-    try {
-        const newUser = new Restaurant({
-            username: req.body.username,
-            password: req.body.password,
-            restaurantname: req.body.restaurantname,
-            address: req.body.address
-        })
-        await newUser.save();
-        // res.render("adminlogin");
-        res.send("Successfully Register ");
-    }
-    catch (error) {
-        res.status(400).send({ error });
-    }
+    bcrypt.hash(req.body.password,saltRounds, function (err,hash)
+   {
+       const newUser = new Restaurant({
+           username: req.body.username,
+           password: hash,
+           restaurantname: req.body.restaurantname,
+           address: req.body.address
+       });
+       newUser.save();
+       if (err) 
+       {
+           console.log(err);
+       } 
+       else 
+       {
+           res.send("Successfully Register ");
+       }
+      
+   });
+   
 
 }
 
+const getRestaurant = (req, res) => {
 
-const getRestaurant = async (req, res) => {
-    try {
-        const { username, password } = req.body;
-        const user = await Restaurant.findOne({ username });
-        if (user && await password === user.password) {
-            res.send("User Found");
-
-        }
-        else {
-            res.send("User Not Found");
-        }
-
-    }
-    catch (error) {
-        throw new Error(error.message);
-    }
+   const { username, password } = req.body;
+   Restaurant.findOne({ username }, function(err,user){
+       if (user) 
+       {
+           bcrypt.compare(password,user.password,function (err,result) {
+               if (result===true) 
+               {
+                   res.send("User Found");
+               } 
+               else
+               {
+                   res.send("Wrong Password");
+               }
+               
+           })
+           
+       }
+       else 
+       {
+           res.send("User Not Found");
+       }
+   });
 }
+
+
+
 
 module.exports = { registerRestaurant, getRestaurant };

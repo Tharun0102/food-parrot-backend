@@ -1,40 +1,48 @@
 const Customer = require('../models/customer');
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 
-const registerCustomer = async (req, res) => {
-    try {
+const registerCustomer = (req, res) => {
+
+    bcrypt.hash(req.body.password, saltRounds, function (err, hash) {
         const newUser = new Customer({
             username: req.body.username,
-            password: req.body.password
-        })
+            password: hash
+        });
+        newUser.save();
+        if (err) {
+            console.log(err);
+        }
+        else {
+            res.send("Successfully Register ");
+        }
 
+    });
 
-        await newUser.save();
-        // res.render("adminlogin");
-        res.send("Successfully Register ");
-    }
-    catch (error) {
-        res.status(400).send({ error });
-    }
 
 }
 
-const getCustomer = async (req, res) => {
-    try {
-        const { username, password } = req.body;
-        const user = await Customer.findOne({ username });
-        if (user && await password === user.password) {
-            res.send("User Found");
+const getCustomer = (req, res) => {
+
+    const { username, password } = req.body;
+    Customer.findOne({ username }, function (err, user) {
+        if (user) {
+            bcrypt.compare(password, user.password, function (err, result) {
+                if (result === true) {
+                    res.status(200).send("User Found");
+                }
+                else {
+                    res.status(400).send("Wrong Password");
+                }
+
+            })
+
         }
         else {
             res.send("User Not Found");
         }
-
-    }
-    catch (error) {
-        console.log(error);
-        throw new Error(error.message);
-    }
+    });
 }
 
 module.exports = { getCustomer, registerCustomer };
