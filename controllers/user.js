@@ -1,52 +1,90 @@
-const User = require('../models/user');
+const Joi = require('joi');
+const { User, validateUser } = require('../models/user');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
 const registerUser = async (req, res) => {
     const { name, password } = req.body;
     if (!name || !password) {
-        res.status(400).send("invalid user name or password");
+        res.status(400).send({ error: "invalid user name or password" });
         return;
     }
-    const userCheck = await User.findOne({ name: name });
-    if (userCheck) {
-        res.status(400).send("User with this name already exists!");
-        return;
-    }
-    bcrypt.hash(password, saltRounds, function (err, hash) {
-        storeUser(name, hash, res)
-    });
-}
-
-const storeUser = async (name, password, res) => {
     try {
-        const newUser = new User({
+        let user = await User.findOne({ name: name });
+        if (user) {
+            res.status(400).send({ error: "User with this name already exists!" });
+            return;
+        }
+        const salt = await bcrypt.genSalt(saltRounds);
+        const hash = await bcrypt.hash(password, salt);
+        user = new User({
             name,
-            password
+            password: hash
         });
-        await newUser.save();
-        res.status(201).send("user registered succesfully!");
+        await user.save();
+        res.status(200).send({
+            id: user._id,
+            name: user.name
+        });
     } catch (err) {
         console.log(err);
-        res.status(500).send("error!")
+        res.status(500).send({ error: "something went wrong!" });
+    }
+}
+
+const loginUser = async (req, res) => {
+    try {
+        const { name, password } = req.body;
+        if (!name || !password) {
+            return res.status(400).send({ error: "invalid name or password" });
+        }
+        const user = await User.findOne({ name });
+        const match = await bcrypt.compare(password, user.password);
+
+        if (match) {
+            res.status(200).send({
+                id: user._id,
+                name: user.name
+            });
+        } else {
+            res.status(400).send({ error: "Invalid Password!" });
+        }
+    } catch (err) {
+        console.log(err.message);
+        res.status(404).send({ error: "user doesn't exist!" })
     }
 }
 
 const getUser = async (req, res) => {
-    const { name, password } = req.body;
+    const { id } = req.params;
+    if (!id) {
+        return res.status(400).send({ error: "invalid user id!" });
+    }
     try {
-        const user = await User.findOne({ name });
-        bcrypt.compare(password, user.password, function (err, result) {
-            if (result === true) {
-                res.status(200).send(user);
-            } else {
-                res.status(400).send("Invalid Password!");
-            }
-        })
+        const user = await User.findOne({ _id: id });
+        if (user) res.send({ id: user._id, name: user.name });
+        else res.status(404).send({ error: "user not found!" })
     } catch (err) {
-        res.status(404).send("user doesn't exist!")
+        res.status(404).send({ error: "user doesn't exist!" })
     }
 }
 
+const editUser = async (req, res) => {
+    const { id } = req.params;
+    if (!id) {
+        return res.status(400).send({ error: "invalid user id!" });
+    }
+    try {
+        User.findByIdAndUpdate(id, req.body, (err, user) => {
+            if (err) {
+                return res.status(500).send({ error: "Error while Updating the User, try again!" })
+            };
+            res.status(201).send({ success: "User updated successfully." });
+        })
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).send({ error: "something went wrong!" })
+    }
+}
 
-module.exports = { getUser, registerUser };
+module.exports = { loginUser, registerUser, getUser, editUser };

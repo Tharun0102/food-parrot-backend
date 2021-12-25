@@ -25,4 +25,11 @@ const MenuItemSchema = new schema({
 
 const MenuItem = mongoose.model('MenuItem', MenuItemSchema);
 
-module.exports = MenuItem;
+const validateMenuItem = (payload) => {
+  const schema = Joi.object({
+    name: Joi.string().min(4).max(30).required()
+  })
+  return schema.validate(payload);
+}
+
+module.exports = { MenuItem, validateMenuItem };

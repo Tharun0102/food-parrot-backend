@@ -1,6 +1,5 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/userRoutes');
@@ -16,16 +15,14 @@ const app = express();
 // Middlewares 
 
 app.use(express.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json({ limit: '30mb', extended: 'true' }));
 
 app.use('/api', authRoutes)
 app.use('/api/user', userRoutes);
 app.use('/api/restaurant', restaurantRoutes);
-app.use('/api/restaurant', menuItemRoutes);
+app.use('/api/menuItem', menuItemRoutes);
 
 
-//database
+//database connection
 const dbURI = process.env.MONGODB_URI;
 const PORT = process.env.PORT || 5000;
 
