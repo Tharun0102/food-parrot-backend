@@ -4,7 +4,8 @@ const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/userRoutes');
 const restaurantRoutes = require('./routes/restaurantRoutes')
-const menuItemRoutes = require('./routes/menuItemRoutes')
+const menuItemRoutes = require('./routes/menuItemRoutes');
+const error = require('./middlewares/error');
 
 dotenv.config();
 
@@ -20,6 +21,8 @@ app.use('/api', authRoutes)
 app.use('/api/user', userRoutes);
 app.use('/api/restaurant', restaurantRoutes);
 app.use('/api/menuItem', menuItemRoutes);
+
+app.use(error);
 
 
 //database connection

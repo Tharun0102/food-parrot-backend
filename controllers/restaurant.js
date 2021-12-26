@@ -9,89 +9,77 @@ const registerRestaurant = async (req, res) => {
     if (!name || !password || !address) {
         return res.status(400).send({ error: "invalid name or password or address" });
     }
-    try {
-        let restaurant = await Restaurant.findOne({ name });
-        if (restaurant) {
-            return res.status(400).send({ error: "Restuarant with this name already exists!" });
-        }
-        const salt = await bcrypt.genSalt(saltRounds);
-        const hash = await bcrypt.hash(password, salt);
-        restaurant = new Restaurant({
-            name,
-            password: hash,
-            address
-        });
-        await restaurant.save();
-        res.status(200).send({
-            id: restaurant._id,
-            name: restaurant.name
-        });
-    } catch (err) {
-        console.log(err.message);
-        res.status(500).send({ error: "something went wrong!" });
+    let restaurant = await Restaurant.findOne({ name });
+    if (restaurant) {
+        return res.status(400).send({ error: "Restuarant with this name already exists!" });
     }
+    const salt = await bcrypt.genSalt(saltRounds);
+    const hash = await bcrypt.hash(password, salt);
+    restaurant = new Restaurant({
+        name,
+        password: hash,
+        address
+    });
+    await restaurant.save();
+
+    const token = restaurant.generateAuthToken();
+    res.header('x-auth-token', token);
+    res.status(200).send({
+        id: restaurant._id,
+        name: restaurant.name
+    });
 }
 
 const loginRestaurant = async (req, res) => {
     const { name, password } = req.body;
-    try {
-        const restaurant = await Restaurant.findOne({ name });
-        bcrypt.compare(password, restaurant.password, function (err, result) {
-            if (result === true) {
-                res.status(200).send({
-                    id: restaurant._id,
-                    name: restaurant.name
-                });
-            } else {
-                res.status(400).send({ error: "Invalid Password!" });
-            }
-        })
-    } catch (err) {
-        res.status(404).send({ error: "Restaurant doesn't exist!" })
-    }
+    const restaurant = await Restaurant.findOne({ name });
+    bcrypt.compare(password, restaurant.password, function (err, result) {
+        if (result === true) {
+            const token = restaurant.generateAuthToken();
+            res.header('x-auth-token', token);
+            res.status(200).send({
+                id: restaurant._id,
+                name: restaurant.name
+            });
+        } else {
+            res.status(400).send({ error: "Invalid Password!" });
+        }
+    })
 }
 
 const getAllRestaurants = async (req, res) => {
-    try {
-        if (req.params.area) {
-            console.log(global.navigator.geolocation, "location");
-        }
-        const restaurantList = await Restaurant.find({});
-        const response = restaurantList.map((item) => {
-            return {
-                id: item._id,
-                name: item.name
-            }
+    const restaurantList = await Restaurant.find({});
+    if (req.query.city) {
+        let filteredRestaurants = restaurantList.filter((item) => item.address.city === req.query.city);
+        filteredRestaurants = filteredRestaurants.map((item) => {
+            const { _id, name, address } = item;
+            return { id: _id, name, address };
         })
-        res.status(200).send(response);
-    } catch (err) {
-        res.status(404).send({ error: "Can't fetch restaurants!" });
+        return res.send(filteredRestaurants);
     }
+    const response = restaurantList.map((item) => {
+        const { _id, name, address } = item;
+        return { id: _id, name, address };
+    })
+    res.status(200).send(response);
+    res.status(404).send({ error: "Can't fetch restaurants!" });
 }
 
 const getMenuItems = async (req, res) => {
-    try {
-        const { id } = req.params;
-        if (!id) {
-            res.status(400).send({ error: "Invalid restaurant id!" });
-        }
-        const items = await MenuItem.find({ restaurantId: id });
-        res.status(200).send(items);
-    } catch (err) {
-        res.status(404).send({ error: "Can't fetch menuItems!" });
+    const { id } = req.params;
+    if (!id) {
+        res.status(400).send({ error: "Invalid restaurant id!" });
     }
+    const items = await MenuItem.find({ restaurantId: id });
+    res.status(200).send(items);
 }
 
 const getMenuItem = async (req, res) => {
-    try {
-        const { id } = req.params;
-        if (!id) return res.status(400).send({ error: "invalid menu id" })
-        const item = await MenuItem.findOne({ _id: id });
-        if (item) res.status(200).send(item);
-        else res.status(404).send({ error: "menuItem not found!" });
-    } catch (err) {
-        res.status(404).send({ error: "Can't find required item!" });
-    }
+    const { id } = req.params;
+    if (!id) return res.status(400).send({ error: "invalid menu id" })
+    const item = await MenuItem.findOne({ _id: id });
+    if (item) res.status(200).send(item);
+    else res.status(404).send({ error: "menuItem not found!" });
 }
 
 const addMenuItem = async (req, res) => {
@@ -104,17 +92,13 @@ const addMenuItem = async (req, res) => {
     if (!restaurantCheck) {
         return res.status(401).send({ error: "No restaurant found!" });
     }
-    try {
-        const item = new MenuItem({
-            name,
-            price,
-            restaurantId: id
-        });
-        await item.save();
-        res.status(200).send({ success: "added item successfully!" });
-    } catch (err) {
-        res.status(500).send({ error: "Can't add this item!" });
-    }
+    const item = new MenuItem({
+        name,
+        price,
+        restaurantId: id
+    });
+    await item.save();
+    res.status(200).send({ success: "added item successfully!" });
 }
 
 const getRestaurant = async (req, res) => {
@@ -122,28 +106,18 @@ const getRestaurant = async (req, res) => {
     if (!id) {
         return res.status(400).send({ error: "invalid restaurant id!" });
     }
-    try {
-        const restaurant = await Restaurant.findOne({ _id: id });
-        if (restaurant) res.send({ id: restaurant._id, name: restaurant.name });
-        else res.status(404).send({ error: "restaurant not found!" })
-    } catch (err) {
-        console.log(err);
-        res.status(500).send({ error: "something went wrong!" })
-    }
+    const restaurant = await Restaurant.findOne({ _id: id });
+    if (restaurant) res.send({ id: restaurant._id, name: restaurant.name });
+    else res.status(404).send({ error: "restaurant not found!" })
 }
 
 const editRestaurant = async (req, res) => {
-    try {
-        Restaurant.findByIdAndUpdate(req.params.id, req.body, (err, restaurant) => {
-            if (err) {
-                return res.status(500).send({ error: "Error while Updating the Restaurant, try again!" })
-            };
-            res.send({ success: "Restaurant updated successfully." });
-        })
-    } catch (err) {
-        console.log(err);
-        res.status(500).send({ error: "something went wrong!" })
-    }
+    Restaurant.findByIdAndUpdate(req.params.id, req.body, (err, restaurant) => {
+        if (err) {
+            return res.status(500).send({ error: "Error while Updating the Restaurant, try again!" })
+        };
+        res.send({ success: "Restaurant updated successfully." });
+    })
 }
 
 module.exports = {

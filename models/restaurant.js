@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
+const jwt = require('jsonwebtoken');
 
 const schema = mongoose.Schema;
 
@@ -14,14 +15,39 @@ const restaurantSchema = new schema({
         required: true
     },
     address: {
-        type: String,
-        required: true
+        street: {
+            type: String,
+            required: true
+        },
+        city: {
+            type: String,
+            required: true
+        },
+        zip: {
+            type: String,
+            required: true
+        },
+        lat: {
+            type: Number
+        },
+        long: {
+            type: Number
+        }
     },
+
     menuItems: [{
         type: schema.Types.ObjectId,
         ref: 'MenuItem'
     }]
 })
+
+restaurantSchema.methods.generateAuthToken = function () {
+    const token = jwt.sign({
+        id: this._id,
+        name: this.name
+    }, process.env.JWT_PRIVATE_KEY);
+    return token;
+}
 
 const Restaurant = mongoose.model('Restaurant', restaurantSchema);
 
