@@ -45,7 +45,7 @@ restaurantSchema.methods.generateAuthToken = function () {
     const token = jwt.sign({
         id: this._id,
         name: this.name
-    }, process.env.JWT_PRIVATE_KEY);
+    }, process.env.JWT_PRIVATE_KEY, { expiresIn: "10h" });
     return token;
 }
 

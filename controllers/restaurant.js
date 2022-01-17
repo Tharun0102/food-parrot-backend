@@ -2,6 +2,7 @@ const { Restaurant } = require('../models/restaurant');
 const { User } = require('../models/user');
 const { MenuItem } = require('../models/MenuItem');
 const bcrypt = require('bcrypt');
+const _ = require('lodash');
 const saltRounds = 10;
 
 const registerRestaurant = async (req, res) => {
@@ -24,10 +25,7 @@ const registerRestaurant = async (req, res) => {
 
     const token = restaurant.generateAuthToken();
     res.header('x-auth-token', token);
-    res.status(200).send({
-        id: restaurant._id,
-        name: restaurant.name
-    });
+    res.status(200).send(_.pick(restaurant, ['_id', 'name', 'address']));
 }
 
 const loginRestaurant = async (req, res) => {
@@ -37,10 +35,7 @@ const loginRestaurant = async (req, res) => {
         if (result === true) {
             const token = restaurant.generateAuthToken();
             res.header('x-auth-token', token);
-            res.status(200).send({
-                id: restaurant._id,
-                name: restaurant.name
-            });
+            res.status(200).send(_.pick(restaurant, ['_id', 'name', 'address']));
         } else {
             res.status(400).send({ error: "Invalid Password!" });
         }
@@ -62,7 +57,6 @@ const getAllRestaurants = async (req, res) => {
         return { id: _id, name, address };
     })
     res.status(200).send(response);
-    res.status(404).send({ error: "Can't fetch restaurants!" });
 }
 
 const getMenuItems = async (req, res) => {

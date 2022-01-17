@@ -5,6 +5,8 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/userRoutes');
 const restaurantRoutes = require('./routes/restaurantRoutes')
 const menuItemRoutes = require('./routes/menuItemRoutes');
+const orderRoutes = require('./routes/orders');
+
 const error = require('./middlewares/error');
 
 dotenv.config();
@@ -17,7 +19,8 @@ const app = express();
 
 app.use(express.json());
 
-app.use('/api', authRoutes)
+app.use('/api', authRoutes);
+app.use('/api/order', orderRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/restaurant', restaurantRoutes);
 app.use('/api/menuItem', menuItemRoutes);
