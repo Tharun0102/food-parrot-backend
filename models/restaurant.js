@@ -34,7 +34,10 @@ const restaurantSchema = new schema({
             type: Number
         }
     },
-
+    imageUrl: {
+        type: String,
+        required: true
+    },
     menuItems: [{
         type: schema.Types.ObjectId,
         ref: 'MenuItem'

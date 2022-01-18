@@ -12,6 +12,14 @@ const userSchema = new schema({
         type: String,
         required: true
     },
+    address: {
+        houseNo: String,
+        street: String,
+        city: String,
+        zip: String,
+        lat: Number,
+        long: Number
+    },
     cart: {
         items: [
             {
