@@ -5,10 +5,10 @@ const { getAllRestaurants, editRestaurant, addMenuItem, getMenuItems, getRestaur
 
 const router = express.Router();
 
-router.get('/all', Auth, asyncMiddleware(getAllRestaurants));
-router.get('/:id', Auth, asyncMiddleware(getRestaurant));
+router.get('/all', asyncMiddleware(getAllRestaurants));
+router.get('/:id', asyncMiddleware(getRestaurant));
 router.post('/:id', Auth, asyncMiddleware(editRestaurant));
-router.get('/:id/all', Auth, asyncMiddleware(getMenuItems));
+router.get('/:id/all', asyncMiddleware(getMenuItems));
 router.post('/:id/addItem', Auth, asyncMiddleware(addMenuItem));
 
 

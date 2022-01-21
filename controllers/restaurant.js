@@ -6,11 +6,11 @@ const _ = require('lodash');
 const saltRounds = 10;
 
 const registerRestaurant = async (req, res) => {
-    const { name, password, address } = req.body;
-    if (!name || !password || !address) {
-        return res.status(400).send({ error: "invalid name or password or address" });
+    const { name, email, password, city, street, zip, imageUrl } = req.body;
+    if (!name || !email || !password) {
+        return res.status(400).send({ error: "invalid name or password" });
     }
-    let restaurant = await Restaurant.findOne({ name });
+    let restaurant = await Restaurant.findOne({ email });
     if (restaurant) {
         return res.status(400).send({ error: "Restuarant with this name already exists!" });
     }
@@ -18,8 +18,12 @@ const registerRestaurant = async (req, res) => {
     const hash = await bcrypt.hash(password, salt);
     restaurant = new Restaurant({
         name,
+        email,
         password: hash,
-        address
+        address: {
+            city, street, zip
+        },
+        imageUrl
     });
     await restaurant.save();
 
@@ -29,13 +33,16 @@ const registerRestaurant = async (req, res) => {
 }
 
 const loginRestaurant = async (req, res) => {
-    const { name, password } = req.body;
-    const restaurant = await Restaurant.findOne({ name });
+    const { email, password } = req.body;
+    const restaurant = await Restaurant.findOne({ email });
+    if (!restaurant) {
+        return res.status(400).send({ error: "Invalid email or Password!" });
+    }
     bcrypt.compare(password, restaurant.password, function (err, result) {
         if (result === true) {
             const token = restaurant.generateAuthToken();
             res.header('x-auth-token', token);
-            res.status(200).send(_.pick(restaurant, ['_id', 'name', 'address']));
+            res.status(200).send(_.pick(restaurant, ['_id', 'name', 'email', 'address']));
         } else {
             res.status(400).send({ error: "Invalid Password!" });
         }
@@ -44,17 +51,18 @@ const loginRestaurant = async (req, res) => {
 
 const getAllRestaurants = async (req, res) => {
     const restaurantList = await Restaurant.find({});
-    if (req.query.city) {
-        let filteredRestaurants = restaurantList.filter((item) => item.address.city === req.query.city);
+    if (req.query.search) {
+        const text = req.query.search
+        let filteredRestaurants = restaurantList.filter((item) => {
+            return item.name.includes(text) || item.address.city.includes(text) || item.address.street.includes(text);
+        });
         filteredRestaurants = filteredRestaurants.map((item) => {
-            const { _id, name, address } = item;
-            return { id: _id, name, address };
+            return _.pick(item, ['_id', 'name', 'address', 'rating', 'imageUrl']);
         })
         return res.send(filteredRestaurants);
     }
     const response = restaurantList.map((item) => {
-        const { _id, name, address } = item;
-        return { id: _id, name, address };
+        return _.pick(item, ['_id', 'name', 'address', 'rating', 'imageUrl']);
     })
     res.status(200).send(response);
 }
@@ -101,7 +109,7 @@ const getRestaurant = async (req, res) => {
         return res.status(400).send({ error: "invalid restaurant id!" });
     }
     const restaurant = await Restaurant.findOne({ _id: id });
-    if (restaurant) res.send({ id: restaurant._id, name: restaurant.name });
+    if (restaurant) res.send(_.pick(restaurant, ['_id', 'name', 'email', 'address']));
     else res.status(404).send({ error: "restaurant not found!" })
 }
 

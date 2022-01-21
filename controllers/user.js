@@ -7,35 +7,36 @@ const { Order } = require('../models/Order');
 const saltRounds = 10;
 
 const registerUser = async (req, res) => {
-    const { name, password } = req.body;
-    if (name?.length < 2 || password?.length < 2) {
-        res.status(400).send({ error: "invalid user name or password" });
+    const { name, email, password } = req.body;
+    if (email?.length < 2 || password?.length < 2) {
+        res.status(400).send({ error: "invalid user email or password" });
         return;
     }
-    let user = await User.findOne({ name: name });
+    let user = await User.findOne({ email });
     if (user) {
-        res.status(400).send({ error: "User with this name already exists!" });
+        res.status(400).send({ error: "User with this email already exists!" });
         return;
     }
     const salt = await bcrypt.genSalt(saltRounds);
     const hash = await bcrypt.hash(password, salt);
     user = new User({
         name,
+        email,
         password: hash
     });
     await user.save();
 
     const token = user.generateAuthToken();
     res.header('x-auth-token', token);
-    res.status(200).send(_.pick(user, ['_id', 'name']));
+    res.status(200).send(_.pick(user, ['_id', 'name', 'email']));
 }
 
 const loginUser = async (req, res) => {
-    const { name, password } = req.body;
-    if (name?.length < 2 || password?.length < 2) {
-        return res.status(400).send({ error: "invalid name or password" });
+    const { email, password } = req.body;
+    if (email?.length < 2 || password?.length < 2) {
+        return res.status(400).send({ error: "invalid email or password" });
     }
-    const user = await User.findOne({ name });
+    const user = await User.findOne({ email });
     if (!user) return res.status(404).send({ error: "user doesn't exist!" })
 
     const match = await bcrypt.compare(password, user.password);
@@ -43,7 +44,7 @@ const loginUser = async (req, res) => {
     if (match) {
         const token = user.generateAuthToken();
         res.header('x-auth-token', token);
-        res.status(200).send(_.pick(user, ['_id', 'name']));
+        res.status(200).send(_.pick(user, ['_id', 'name', 'email']));
     } else {
         res.status(400).send({ error: "Invalid Password!" });
     }
@@ -52,7 +53,7 @@ const loginUser = async (req, res) => {
 const getUser = async (req, res) => {
     const { id } = req.params;
     const user = await User.findOne({ _id: id });
-    if (user) res.send({ id: user._id, name: user.name });
+    if (user) res.send(_.pick(user, ['_id', 'name', 'email']));
     else res.status(404).send({ error: "user not found!" })
 }
 

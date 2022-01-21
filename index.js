@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/userRoutes');
 const restaurantRoutes = require('./routes/restaurantRoutes')
@@ -18,6 +19,9 @@ const app = express();
 // Middlewares 
 
 app.use(express.json());
+app.use(cors({
+    origin: ['http://localhost:3000']
+}));
 
 app.use('/api', authRoutes);
 app.use('/api/order', orderRoutes);

@@ -10,6 +10,11 @@ const restaurantSchema = new schema({
         required: true,
         unique: true
     },
+    email: {
+        type: String,
+        required: true,
+        unique: true
+    },
     password: {
         type: String,
         required: true
@@ -38,6 +43,8 @@ const restaurantSchema = new schema({
         type: String,
         required: true
     },
+    rating: Number,
+    ratingsCount: Number,
     menuItems: [{
         type: schema.Types.ObjectId,
         ref: 'MenuItem'
