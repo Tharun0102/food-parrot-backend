@@ -5,7 +5,7 @@ const { Restaurant } = require('../models/restaurant');
 const { Order } = require("../models/Order");
 
 const createOrder = async (req, res) => {
-  const { userId, restaurantId, items, order_status } = req.body;
+  const { userId, restaurantId, items, order_status, address } = req.body;
   const user = await User.findById(userId);
   if (!userId || !user) {
     return res.status(400).send({ error: "invalid user id!" });
@@ -16,14 +16,15 @@ const createOrder = async (req, res) => {
   }
   let totalPrice = 0;
   for (let item of items) {
-    totalPrice += item.quantity * item.item.price;
+    totalPrice += item.count * item.price;
   }
   const order = new Order({
     items,
     status: order_status,
     userId: mongoose.Types.ObjectId(userId),
     restaurantId: mongoose.Types.ObjectId(restaurantId),
-    totalPrice
+    totalPrice,
+    address
   });
   await order.save();
 
@@ -64,16 +65,19 @@ const getOrders = async (req, res) => {
   const response = await Promise.all(orders.map(async (order) => {
     await order.populate('userId');
     await order.populate('restaurantId');
-    return _.pick(order, [
-      '_id',
-      'items',
-      'userId._id',
-      'userId.name',
-      'restaurantId._id',
-      'restaurantId.name',
-      'restaurantId.address',
-      'status'
-    ]);
+    return {
+      ..._.pick(order, [
+        '_id',
+        'items',
+        'userId._id',
+        'userId.name',
+        'restaurantId._id',
+        'restaurantId.name',
+        'restaurantId.address',
+        'status',
+        'address'
+      ]), createdAt: order._id.getTimestamp()
+    };
   }))
   return res.status(200).send(response)
 }

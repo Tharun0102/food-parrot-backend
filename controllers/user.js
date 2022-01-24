@@ -19,6 +19,7 @@ const registerUser = async (req, res) => {
     }
     const salt = await bcrypt.genSalt(saltRounds);
     const hash = await bcrypt.hash(password, salt);
+    const token = user.generateAuthToken();
     user = new User({
         name,
         email,
@@ -26,9 +27,8 @@ const registerUser = async (req, res) => {
     });
     await user.save();
 
-    const token = user.generateAuthToken();
     res.header('x-auth-token', token);
-    res.status(200).send(_.pick(user, ['_id', 'name', 'email']));
+    res.status(200).send({ ..._.pick(user, ['_id', 'name', 'email']), token });
 }
 
 const loginUser = async (req, res) => {
@@ -44,7 +44,7 @@ const loginUser = async (req, res) => {
     if (match) {
         const token = user.generateAuthToken();
         res.header('x-auth-token', token);
-        res.status(200).send(_.pick(user, ['_id', 'name', 'email']));
+        res.status(200).send({ ..._.pick(user, ['_id', 'name', 'email']), token });
     } else {
         res.status(400).send({ error: "Invalid Password!" });
     }

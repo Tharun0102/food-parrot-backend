@@ -11,6 +11,9 @@ const MenuItemSchema = new schema({
     type: Number,
     required: true
   },
+  description: {
+    type: String
+  },
   ratings: {
     type: Number
   },
@@ -20,6 +23,9 @@ const MenuItemSchema = new schema({
   restaurantId: {
     type: schema.Types.ObjectId,
     required: true
+  },
+  imageUrl: {
+    type: String
   }
 })
 

@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const path = require('path')
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/userRoutes');
 const restaurantRoutes = require('./routes/restaurantRoutes')
@@ -17,7 +18,7 @@ dotenv.config();
 const app = express();
 
 // Middlewares 
-
+app.use("/images", express.static(path.join(__dirname, "images")));
 app.use(express.json());
 app.use(cors({
     origin: ['http://localhost:3000']

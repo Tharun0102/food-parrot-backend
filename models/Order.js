@@ -5,9 +5,8 @@ const schema = mongoose.Schema;
 const orderschema = new schema({
   items: [
     {
-      item: { type: Object, required: true },
-      quantity: { type: Number, required: true },
-    },
+      type: Object
+    }
   ],
   status: {
     type: String,
@@ -27,6 +26,9 @@ const orderschema = new schema({
     type: schema.Types.ObjectId,
     required: true,
     ref: "Restaurant",
+  },
+  address: {
+    type: Object
   }
 });
 

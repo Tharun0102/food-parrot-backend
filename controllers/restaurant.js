@@ -6,9 +6,12 @@ const _ = require('lodash');
 const saltRounds = 10;
 
 const registerRestaurant = async (req, res) => {
-    const { name, email, password, city, street, zip, imageUrl } = req.body;
+    const { name, email, password, city, street, zip } = req.body;
     if (!name || !email || !password) {
         return res.status(400).send({ error: "invalid name or password" });
+    }
+    if (!req.file) {
+        return res.status(400).send({ error: "image required!" });
     }
     let restaurant = await Restaurant.findOne({ email });
     if (restaurant) {
@@ -23,13 +26,13 @@ const registerRestaurant = async (req, res) => {
         address: {
             city, street, zip
         },
-        imageUrl
+        imageUrl: req.file.path
     });
     await restaurant.save();
 
     const token = restaurant.generateAuthToken();
     res.header('x-auth-token', token);
-    res.status(200).send(_.pick(restaurant, ['_id', 'name', 'address']));
+    res.status(200).send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address']), token });
 }
 
 const loginRestaurant = async (req, res) => {
@@ -42,7 +45,7 @@ const loginRestaurant = async (req, res) => {
         if (result === true) {
             const token = restaurant.generateAuthToken();
             res.header('x-auth-token', token);
-            res.status(200).send(_.pick(restaurant, ['_id', 'name', 'email', 'address']));
+            res.status(200).send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address']), token });
         } else {
             res.status(400).send({ error: "Invalid Password!" });
         }
@@ -86,18 +89,24 @@ const getMenuItem = async (req, res) => {
 
 const addMenuItem = async (req, res) => {
     const { id } = req.params;
-    const { name, price } = req.body;
+    const { name, description, price } = req.body;
+    console.log(req.file, req.body);
     if (!id || !name || !price) {
         return res.status(400).send({ error: "Insufficient Information!" })
     }
-    const restaurantCheck = Restaurant.findOne({ _id: id })
+    if (!req.file) {
+        return res.status(400).send({ error: "Image required!" })
+    }
+    const restaurantCheck = await Restaurant.findOne({ _id: id })
     if (!restaurantCheck) {
         return res.status(401).send({ error: "No restaurant found!" });
     }
     const item = new MenuItem({
         name,
+        description,
         price,
-        restaurantId: id
+        restaurantId: id,
+        imageUrl: req.file.path
     });
     await item.save();
     res.status(200).send({ success: "added item successfully!" });
