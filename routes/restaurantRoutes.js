@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.get('/all', asyncMiddleware(getAllRestaurants));
 router.get('/:id', asyncMiddleware(getRestaurant));
-router.post('/:id', Auth, asyncMiddleware(editRestaurant));
+router.post('/:id', Auth, imageUpload.single('image'), asyncMiddleware(editRestaurant));
 router.get('/:id/all', asyncMiddleware(getMenuItems));
 router.post('/:id/addItem', Auth, imageUpload.single('image'), asyncMiddleware(addMenuItem));
 

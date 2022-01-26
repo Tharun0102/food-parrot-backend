@@ -4,6 +4,8 @@ const { MenuItem } = require('../models/MenuItem');
 const bcrypt = require('bcrypt');
 const _ = require('lodash');
 const saltRounds = 10;
+const path = require('path');
+const fs = require('fs');
 
 const registerRestaurant = async (req, res) => {
     const { name, email, password, city, street, zip } = req.body;
@@ -45,7 +47,7 @@ const loginRestaurant = async (req, res) => {
         if (result === true) {
             const token = restaurant.generateAuthToken();
             res.header('x-auth-token', token);
-            res.status(200).send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address']), token });
+            res.status(200).send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageUrl']), token });
         } else {
             res.status(400).send({ error: "Invalid Password!" });
         }
@@ -57,7 +59,9 @@ const getAllRestaurants = async (req, res) => {
     if (req.query.search) {
         const text = req.query.search
         let filteredRestaurants = restaurantList.filter((item) => {
-            return item.name.includes(text) || item.address.city.includes(text) || item.address.street.includes(text);
+            return checkIncludes(item.name, text) ||
+                checkIncludes(item.address.city, text) ||
+                checkIncludes(item.address.street, text);
         });
         filteredRestaurants = filteredRestaurants.map((item) => {
             return _.pick(item, ['_id', 'name', 'address', 'rating', 'imageUrl']);
@@ -68,6 +72,10 @@ const getAllRestaurants = async (req, res) => {
         return _.pick(item, ['_id', 'name', 'address', 'rating', 'imageUrl']);
     })
     res.status(200).send(response);
+}
+
+const checkIncludes = (source, pattern) => {
+    return source.toLowerCase().includes(pattern.toLowerCase());
 }
 
 const getMenuItems = async (req, res) => {
@@ -90,7 +98,6 @@ const getMenuItem = async (req, res) => {
 const addMenuItem = async (req, res) => {
     const { id } = req.params;
     const { name, description, price } = req.body;
-    console.log(req.file, req.body);
     if (!id || !name || !price) {
         return res.status(400).send({ error: "Insufficient Information!" })
     }
@@ -118,16 +125,42 @@ const getRestaurant = async (req, res) => {
         return res.status(400).send({ error: "invalid restaurant id!" });
     }
     const restaurant = await Restaurant.findOne({ _id: id });
-    if (restaurant) res.send(_.pick(restaurant, ['_id', 'name', 'email', 'address']));
+    if (restaurant) res.send(_.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageUrl']));
     else res.status(404).send({ error: "restaurant not found!" })
 }
 
+const removeUploadedImage = (imageUrl) => {
+    filepath = path.join(__dirname, "../", imageUrl);
+    fs.unlink(filepath, (err) => {
+        console.log(err);
+    });
+}
+
 const editRestaurant = async (req, res) => {
-    Restaurant.findByIdAndUpdate(req.params.id, req.body, (err, restaurant) => {
+    const { id } = req.params;
+    const { city, street, zip } = req.body;
+    const restaurant = await Restaurant.findById(id);
+    if (!id || !restaurant) {
+        return res.status(404).send({ error: "No Restaurant found!" });
+    }
+    const token = req.header('x-auth-token');
+    let changes = { ...req.body };
+    changes.address = {
+        city,
+        street,
+        zip
+    };
+    if (req.file) {
+        changes.imageUrl = req.file.path;
+        removeUploadedImage(restaurant.imageUrl);
+    }
+
+    res.header('x-auth-token', token);
+    Restaurant.findByIdAndUpdate(req.params.id, changes, { new: true }, (err, restaurant) => {
         if (err) {
             return res.status(500).send({ error: "Error while Updating the Restaurant, try again!" })
         };
-        res.send({ success: "Restaurant updated successfully." });
+        res.send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageUrl']), token });
     })
 }
 

@@ -19,7 +19,6 @@ const registerUser = async (req, res) => {
     }
     const salt = await bcrypt.genSalt(saltRounds);
     const hash = await bcrypt.hash(password, salt);
-    const token = user.generateAuthToken();
     user = new User({
         name,
         email,
@@ -27,8 +26,9 @@ const registerUser = async (req, res) => {
     });
     await user.save();
 
+    const token = user.generateAuthToken();
     res.header('x-auth-token', token);
-    res.status(200).send({ ..._.pick(user, ['_id', 'name', 'email']), token });
+    res.status(200).send({ ..._.pick(user, ['_id', 'name', 'email', 'address']), token });
 }
 
 const loginUser = async (req, res) => {
@@ -44,7 +44,7 @@ const loginUser = async (req, res) => {
     if (match) {
         const token = user.generateAuthToken();
         res.header('x-auth-token', token);
-        res.status(200).send({ ..._.pick(user, ['_id', 'name', 'email']), token });
+        res.status(200).send({ ..._.pick(user, ['_id', 'name', 'email', 'address']), token });
     } else {
         res.status(400).send({ error: "Invalid Password!" });
     }
@@ -53,17 +53,19 @@ const loginUser = async (req, res) => {
 const getUser = async (req, res) => {
     const { id } = req.params;
     const user = await User.findOne({ _id: id });
-    if (user) res.send(_.pick(user, ['_id', 'name', 'email']));
+    if (user) res.send(_.pick(user, ['_id', 'name', 'email', 'address']));
     else res.status(404).send({ error: "user not found!" })
 }
 
 const editUser = async (req, res) => {
     const { id } = req.params;
-    User.findByIdAndUpdate(id, req.body, (err, user) => {
+    const token = req.header('x-auth-token');
+    res.header('x-auth-token', token);
+    User.findByIdAndUpdate(id, req.body, { new: true }, (err, user) => {
         if (err || !user) {
             return res.status(500).send({ error: "Error while Updating the User, try again!" })
         };
-        res.status(200).send({ success: "User updated successfully." });
+        res.status(200).send({ ..._.pick(user, ['_id', 'name', 'email', 'address']), token });
     })
 }
 
