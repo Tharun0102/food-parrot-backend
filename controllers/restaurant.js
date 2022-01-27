@@ -28,7 +28,9 @@ const registerRestaurant = async (req, res) => {
         address: {
             city, street, zip
         },
-        imageUrl: req.file.path
+        imageUrl: req.file.path,
+        rating: 0.0,
+        ratingsCount: 0
     });
     await restaurant.save();
 
@@ -47,7 +49,7 @@ const loginRestaurant = async (req, res) => {
         if (result === true) {
             const token = restaurant.generateAuthToken();
             res.header('x-auth-token', token);
-            res.status(200).send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageUrl']), token });
+            res.status(200).send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageUrl', 'rating', 'ratingsCount']), token });
         } else {
             res.status(400).send({ error: "Invalid Password!" });
         }
@@ -64,12 +66,12 @@ const getAllRestaurants = async (req, res) => {
                 checkIncludes(item.address.street, text);
         });
         filteredRestaurants = filteredRestaurants.map((item) => {
-            return _.pick(item, ['_id', 'name', 'address', 'rating', 'imageUrl']);
+            return _.pick(item, ['_id', 'name', 'address', 'rating', 'ratingsCount', 'imageUrl']);
         })
         return res.send(filteredRestaurants);
     }
     const response = restaurantList.map((item) => {
-        return _.pick(item, ['_id', 'name', 'address', 'rating', 'imageUrl']);
+        return _.pick(item, ['_id', 'name', 'address', 'rating', 'ratingsCount', 'imageUrl']);
     })
     res.status(200).send(response);
 }
@@ -125,7 +127,7 @@ const getRestaurant = async (req, res) => {
         return res.status(400).send({ error: "invalid restaurant id!" });
     }
     const restaurant = await Restaurant.findOne({ _id: id });
-    if (restaurant) res.send(_.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageUrl']));
+    if (restaurant) res.send(_.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageUrl', 'rating', 'ratingsCount']));
     else res.status(404).send({ error: "restaurant not found!" })
 }
 
@@ -160,7 +162,7 @@ const editRestaurant = async (req, res) => {
         if (err) {
             return res.status(500).send({ error: "Error while Updating the Restaurant, try again!" })
         };
-        res.send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageUrl']), token });
+        res.send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageUrl', 'rating', 'ratingsCount']), token });
     })
 }
 

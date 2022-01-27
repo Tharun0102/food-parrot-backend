@@ -29,7 +29,12 @@ const orderschema = new schema({
   },
   address: {
     type: Object
-  }
+  },
+  mobile: {
+    type: String,
+    required: true
+  },
+  rating: Number
 });
 
 const Order = new mongoose.model('Order', orderschema);

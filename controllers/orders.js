@@ -5,7 +5,7 @@ const { Restaurant } = require('../models/restaurant');
 const { Order } = require("../models/Order");
 
 const createOrder = async (req, res) => {
-  const { userId, restaurantId, items, order_status, address } = req.body;
+  const { userId, restaurantId, items, order_status, address, mobile } = req.body;
   const user = await User.findById(userId);
   if (!userId || !user) {
     return res.status(400).send({ error: "invalid user id!" });
@@ -24,7 +24,9 @@ const createOrder = async (req, res) => {
     userId: mongoose.Types.ObjectId(userId),
     restaurantId: mongoose.Types.ObjectId(restaurantId),
     totalPrice,
-    address
+    address,
+    mobile,
+    rating: 0.0
   });
   await order.save();
 
@@ -34,21 +36,32 @@ const createOrder = async (req, res) => {
 const editOrder = async (req, res) => {
   const { orderId } = req.params;
   const order = await Order.findById(orderId);
-  if (!orderId || !order) {
-    return res.status(400).send({ error: "invalid orderId!" });
+  if (req.body.rating) {
+    const restaurant = await Restaurant.findById(order.restaurantId);
+    const currentRating = order.rating;
+    const newRating = req.body.rating;
+
+    const sum = restaurant.rating +
+      (currentRating > 0 ? newRating - currentRating : newRating);
+    const total = restaurant.ratingsCount + (currentRating == 0 ? 1 : 0);
+    const avg = sum / total;
+
+    restaurant.rating = avg;
+    restaurant.ratingsCount = total;
+    await restaurant.save();
   }
-  order.status = req.body.order_status;
-  await order.save();
-  return res.status(200).send(_.pick(order, ['_id', 'items', 'status']))
+  Order.findByIdAndUpdate(orderId, req.body, { new: true }, (err, order) => {
+    if (err) {
+      return res.status(500).send({ error: "Error while Updating the order, try again!" })
+    };
+    res.status(200).send("order updated!");
+  })
 }
 
 const getOrders = async (req, res) => {
   const { type, id } = req.body;
   if (type != 'USER' && type != 'RESTAURANT') {
     return res.status(400).send({ error: "invalid user type!" });
-  }
-  if (!id) {
-    return res.status(400).send({ error: "invalid id!" });
   }
   let user, orders;
   if (type == 'USER') {
@@ -57,6 +70,9 @@ const getOrders = async (req, res) => {
   } else {
     user = await Restaurant.findById(id);
     orders = await Order.find({ restaurantId: id });
+  }
+  if (req.body.status) {
+    orders = orders.filter((order) => order.status == req.body.status);
   }
 
   if (!user) {
@@ -75,7 +91,9 @@ const getOrders = async (req, res) => {
         'restaurantId.name',
         'restaurantId.address',
         'status',
-        'address'
+        'address',
+        'mobile',
+        'rating'
       ]), createdAt: order._id.getTimestamp()
     };
   }))
