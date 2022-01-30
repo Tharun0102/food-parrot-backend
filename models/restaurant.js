@@ -39,7 +39,7 @@ const restaurantSchema = new schema({
             type: Number
         }
     },
-    imageUrl: {
+    imageId: {
         type: String,
         required: true
     },

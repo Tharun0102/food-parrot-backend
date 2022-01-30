@@ -8,6 +8,7 @@ const userRoutes = require('./routes/userRoutes');
 const restaurantRoutes = require('./routes/restaurantRoutes')
 const menuItemRoutes = require('./routes/menuItemRoutes');
 const orderRoutes = require('./routes/orders');
+const { cloudinary, uploadController } = require('./utils/cloudinary');
 
 const error = require('./middlewares/error');
 
@@ -18,11 +19,13 @@ dotenv.config();
 const app = express();
 
 // Middlewares 
-app.use("/images", express.static(path.join(__dirname, "images")));
 app.use(express.json());
 app.use(cors({
     origin: ['http://localhost:3000']
 }));
+
+// api to upload images 
+app.post('/api/upload', uploadController);
 
 app.use('/api', authRoutes);
 app.use('/api/order', orderRoutes);

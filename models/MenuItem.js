@@ -24,7 +24,7 @@ const MenuItemSchema = new schema({
     type: schema.Types.ObjectId,
     required: true
   },
-  imageUrl: {
+  imageId: {
     type: String
   }
 })

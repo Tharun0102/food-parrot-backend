@@ -2,6 +2,7 @@ const { MenuItem } = require('../models/MenuItem');
 const _ = require('lodash');
 const path = require('path');
 const fs = require('fs');
+const { destroyFile } = require('../Utils/cloudinary');
 
 const editMenuItem = async (req, res) => {
   const { id } = req.params;
@@ -10,13 +11,10 @@ const editMenuItem = async (req, res) => {
   if (!item) {
     return res.status(401).send({ error: "No menuItem found to update!" });
   }
-
-  let changes = req.body;
-  if (req.file) {
-    changes.imageUrl = req.file.path;
-    removeUploadedImage(item.imageUrl);
+  if (payload.imageId) {
+    await destroyFile(item.imageId);
   }
-  await MenuItem.findByIdAndUpdate(id, changes);
+  await MenuItem.findByIdAndUpdate(id, req.body);
   res.status(200).send({ success: "item updated successfully!" });
 }
 
@@ -27,17 +25,10 @@ const deleteMenuItem = async (req, res) => {
   if (!item) {
     return res.status(401).send({ error: "No menuItem found to delete!" });
   }
-  removeUploadedImage(item.imageUrl);
+  await destroyFile(item.imageId);
 
   await MenuItem.findByIdAndDelete(id);
   res.status(200).send({ success: "item deleted successfully!" });
-}
-
-const removeUploadedImage = (imageUrl) => {
-  filepath = path.join(__dirname, "../", imageUrl);
-  fs.unlink(filepath, (err) => {
-    console.log(err);
-  });
 }
 
 module.exports = { editMenuItem, deleteMenuItem }
