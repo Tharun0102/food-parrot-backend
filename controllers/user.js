@@ -1,4 +1,5 @@
 const _ = require("lodash");
+const jwt = require('jsonwebtoken');
 const { User } = require('../models/user');
 const { MenuItem } = require('../models/MenuItem');
 
@@ -69,6 +70,17 @@ const editUser = async (req, res) => {
     })
 }
 
+const verifyToken = async (req, res) => {
+    const token = req.body.token;
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_PRIVATE_KEY);
+        if (!decoded) return res.status(200).send(false)
+        res.status(200).send(true)
+    } catch (err) {
+        return res.status(200).send(false)
+    }
+}
+
 const updateCart = async (req, res) => {
     const { id } = req.params;
     const user = await User.findById(id);
@@ -115,5 +127,6 @@ module.exports = {
     getUser,
     editUser,
     updateCart,
-    getCart
+    getCart,
+    verifyToken
 };

@@ -26,7 +26,9 @@ const createOrder = async (req, res) => {
     totalPrice,
     address,
     mobile,
-    rating: 0.0
+    rating: 0.0,
+    createdDate: new Date().getDate(),
+    createdMonth: new Date().getMonth()
   });
   await order.save();
 
@@ -41,7 +43,7 @@ const editOrder = async (req, res) => {
     const currentRating = order.rating;
     const newRating = req.body.rating;
 
-    const sum = restaurant.rating +
+    const sum = restaurant.rating * restaurant.ratingsCount +
       (currentRating > 0 ? newRating - currentRating : newRating);
     const total = restaurant.ratingsCount + (currentRating == 0 ? 1 : 0);
     const avg = sum / total;

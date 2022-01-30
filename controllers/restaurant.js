@@ -1,5 +1,5 @@
 const { Restaurant } = require('../models/restaurant');
-const { User } = require('../models/user');
+const { Order } = require('../models/Order');
 const { MenuItem } = require('../models/MenuItem');
 const bcrypt = require('bcrypt');
 const _ = require('lodash');
@@ -57,27 +57,32 @@ const loginRestaurant = async (req, res) => {
 }
 
 const getAllRestaurants = async (req, res) => {
-    const restaurantList = await Restaurant.find({});
-    if (req.query.search) {
-        const text = req.query.search
-        let filteredRestaurants = restaurantList.filter((item) => {
-            return checkIncludes(item.name, text) ||
-                checkIncludes(item.address.city, text) ||
-                checkIncludes(item.address.street, text);
-        });
+    const page = req.body.page || 1;
+    const limit = req.body.limit || 12;
+    const search = req.body.search;
+    const toSkip = (page - 1) * limit;
+    if (search) {
+        const searchFilter = {
+            $or: [
+                { name: { $regex: search, $options: 'i' } },
+                { 'address.city': { $regex: search, $options: 'i' } },
+                { 'address.street': { $regex: search, $options: 'i' } }
+            ]
+        };
+        let filteredRestaurants = await Restaurant.find(searchFilter).skip(toSkip).limit(limit);
+        const total = await Restaurant.find(searchFilter).count();
+        console.log(total, filteredRestaurants.length);
         filteredRestaurants = filteredRestaurants.map((item) => {
             return _.pick(item, ['_id', 'name', 'address', 'rating', 'ratingsCount', 'imageUrl']);
         })
-        return res.send(filteredRestaurants);
+        return res.send({ total, restaurants: filteredRestaurants });
     }
-    const response = restaurantList.map((item) => {
+    const restaurants = await Restaurant.find({}).skip(toSkip).limit(limit);
+    const total = await Restaurant.find({}).count();
+    const response = restaurants.map((item) => {
         return _.pick(item, ['_id', 'name', 'address', 'rating', 'ratingsCount', 'imageUrl']);
     })
-    res.status(200).send(response);
-}
-
-const checkIncludes = (source, pattern) => {
-    return source.toLowerCase().includes(pattern.toLowerCase());
+    res.status(200).send({ total, restaurants: response });
 }
 
 const getMenuItems = async (req, res) => {
@@ -131,6 +136,63 @@ const getRestaurant = async (req, res) => {
     else res.status(404).send({ error: "restaurant not found!" })
 }
 
+const getRestaurantStats = async (req, res) => {
+    const { id } = req.params;
+    if (!id) {
+        return res.status(400).send({ error: "invalid restaurant id!" });
+    }
+    const stats = await getStats(id);
+    res.send(stats);
+}
+
+const getStats = async (id) => {
+    const total = await Order.find({ restaurantId: id }).count();
+    const totalToday = await Order.find({
+        restaurantId: id,
+        createdDate: new Date().getDate()
+    }).count();
+
+    const totalMonthly = await Order.find({
+        restaurantId: id,
+        createdMonth: new Date().getMonth()
+    }).count();
+    const completed = await Order.find({ restaurantId: id, status: 'Completed' }).count();
+    const completedToday = await Order.find({
+        restaurantId: id, status: 'Completed',
+        createdDate: new Date().getDate()
+    }).count();
+    const completedMonthly = await Order.find({
+        restaurantId: id,
+        status: 'Completed',
+        createdMonth: new Date().getMonth()
+    }).count();
+    const cancelled = await Order.find({
+        restaurantId: id,
+        status: 'Cancelled'
+    }).count();
+    const cancelledToday = await Order.find({
+        restaurantId: id,
+        status: 'Cancelled',
+        createdDate: new Date().getDate()
+    }).count();
+    const cancelledMonthly = await Order.find({
+        restaurantId: id,
+        status: 'Cancelled',
+        createdMonth: new Date().getMonth()
+    }).count();
+    return {
+        total,
+        totalToday,
+        totalMonthly,
+        completed,
+        completedToday,
+        completedMonthly,
+        cancelled,
+        cancelledToday,
+        cancelledMonthly
+    }
+}
+
 const removeUploadedImage = (imageUrl) => {
     filepath = path.join(__dirname, "../", imageUrl);
     fs.unlink(filepath, (err) => {
@@ -174,5 +236,6 @@ module.exports = {
     getMenuItems,
     addMenuItem,
     editRestaurant,
-    getMenuItem
+    getMenuItem,
+    getRestaurantStats
 };

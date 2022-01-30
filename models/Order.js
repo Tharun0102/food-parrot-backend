@@ -34,7 +34,9 @@ const orderschema = new schema({
     type: String,
     required: true
   },
-  rating: Number
+  rating: Number,
+  createdMonth: Number,
+  createdDate: Number
 });
 
 const Order = new mongoose.model('Order', orderschema);

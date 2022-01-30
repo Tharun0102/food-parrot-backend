@@ -5,13 +5,15 @@ const {
   editUser,
   getUser,
   getCart,
-  updateCart
+  updateCart,
+  verifyToken
 } = require('../controllers/user');
 
 const router = express.Router();
 
 router.post('/:id/edit', Auth, asyncMiddleware(editUser));
 router.get('/:id', Auth, asyncMiddleware(getUser));
+router.post('/verifyToken', asyncMiddleware(verifyToken));
 router.post('/:id/cart', Auth, asyncMiddleware(updateCart));
 router.get('/:id/cart', Auth, asyncMiddleware(getCart));
 
