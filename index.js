@@ -8,6 +8,7 @@ const userRoutes = require('./routes/userRoutes');
 const restaurantRoutes = require('./routes/restaurantRoutes')
 const menuItemRoutes = require('./routes/menuItemRoutes');
 const orderRoutes = require('./routes/orders');
+const stripeRoutes = require('./routes/stripeRoutes');
 const { cloudinary, uploadController } = require('./utils/cloudinary');
 
 const error = require('./middlewares/error');
@@ -21,13 +22,14 @@ const app = express();
 // Middlewares 
 app.use(express.json());
 app.use(cors({
-    origin: ['http://localhost:3000']
+    origin: '*'
 }));
 
 // api to upload images 
 app.post('/api/upload', uploadController);
 
 app.use('/api', authRoutes);
+app.use('/api', stripeRoutes);
 app.use('/api/order', orderRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/restaurant', restaurantRoutes);

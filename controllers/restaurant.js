@@ -31,13 +31,14 @@ const registerRestaurant = async (req, res) => {
         },
         rating: 0.0,
         ratingsCount: 0,
-        imageId
+        imageId,
+        wallet: 0
     });
     await restaurant.save();
 
     const token = restaurant.generateAuthToken();
     res.header('x-auth-token', token);
-    res.status(200).send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageId']), token });
+    res.status(200).send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageId', 'wallet']), token });
 }
 
 const loginRestaurant = async (req, res) => {
@@ -50,7 +51,7 @@ const loginRestaurant = async (req, res) => {
         if (result === true) {
             const token = restaurant.generateAuthToken();
             res.header('x-auth-token', token);
-            res.status(200).send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageId', 'rating', 'ratingsCount']), token });
+            res.status(200).send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageId', 'rating', 'ratingsCount', 'wallet']), token });
         } else {
             res.status(400).send({ error: "Invalid Password!" });
         }
@@ -72,7 +73,6 @@ const getAllRestaurants = async (req, res) => {
         };
         let filteredRestaurants = await Restaurant.find(searchFilter).skip(toSkip).limit(limit);
         const total = await Restaurant.find(searchFilter).count();
-        console.log(total, filteredRestaurants.length);
         filteredRestaurants = filteredRestaurants.map((item) => {
             return _.pick(item, ['_id', 'name', 'address', 'rating', 'ratingsCount', 'imageId']);
         })
@@ -194,39 +194,44 @@ const getStats = async (id) => {
     }
 }
 
-const removeUploadedImage = (imageUrl) => {
-    filepath = path.join(__dirname, "../", imageUrl);
-    fs.unlink(filepath, (err) => {
-        console.log(err);
-    });
-}
-
 const editRestaurant = async (req, res) => {
     const { id } = req.params;
-    const { city, street, zip } = req.body;
     const restaurant = await Restaurant.findById(id);
-    if (!id || !restaurant) {
-        return res.status(404).send({ error: "No Restaurant found!" });
-    }
     const token = req.header('x-auth-token');
-    let changes = { ...req.body };
-    changes.address = {
-        city,
-        street,
-        zip
-    };
-    if (req.body.imageId) {
-        changes.imageId = req.body.imageId;
-        await destroyFile(restaurant.imageId);
-    }
-
     res.header('x-auth-token', token);
-    Restaurant.findByIdAndUpdate(req.params.id, changes, { new: true }, (err, restaurant) => {
-        if (err) {
-            return res.status(500).send({ error: "Error while Updating the Restaurant, try again!" })
+    if (req.body.paymentAmount) {
+        try {
+            const rest = await Restaurant.findByIdAndUpdate(id,
+                { wallet: restaurant.wallet + req.body.paymentAmount },
+                { new: true });
+            return res.send({ ..._.pick(rest, ['_id', 'name', 'email', 'address', 'imageId', 'rating', 'ratingsCount', 'wallet']), token });
+        } catch (error) {
+            console.log(error);
+            return res.status(500).send("couldn't update")
+        }
+    } else {
+        const { city, street, zip } = req.body;
+        if (!id || !restaurant) {
+            return res.status(404).send({ error: "No Restaurant found!" });
+        }
+        let changes = { ...req.body };
+        changes.address = {
+            city,
+            street,
+            zip
         };
-        res.send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageId', 'rating', 'ratingsCount']), token });
-    })
+        if (req.body.imageId) {
+            changes.imageId = req.body.imageId;
+            await destroyFile(restaurant.imageId);
+        }
+
+        Restaurant.findByIdAndUpdate(req.params.id, changes, { new: true }, (err, restaurant) => {
+            if (err) {
+                return res.status(500).send({ error: "Error while Updating the Restaurant, try again!" })
+            };
+            res.send({ ..._.pick(restaurant, ['_id', 'name', 'email', 'address', 'imageId', 'rating', 'ratingsCount', 'wallet']), token });
+        })
+    }
 }
 
 module.exports = {

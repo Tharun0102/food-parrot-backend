@@ -11,7 +11,6 @@ router.post('/:id', Auth, asyncMiddleware(editRestaurant));
 router.get('/:id/all', asyncMiddleware(getMenuItems));
 router.get('/:id/stats', asyncMiddleware(getRestaurantStats));
 router.post('/:id/addItem', Auth, asyncMiddleware(addMenuItem));
-router.post('/:id/addItem', Auth, asyncMiddleware(addMenuItem));
 
 
 module.exports = router;

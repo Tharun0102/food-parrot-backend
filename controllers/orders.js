@@ -5,7 +5,7 @@ const { Restaurant } = require('../models/restaurant');
 const { Order } = require("../models/Order");
 
 const createOrder = async (req, res) => {
-  const { userId, restaurantId, items, order_status, address, mobile } = req.body;
+  const { userId, restaurantId, items, order_status, address, mobile, paymentMode } = req.body;
   const user = await User.findById(userId);
   if (!userId || !user) {
     return res.status(400).send({ error: "invalid user id!" });
@@ -28,11 +28,12 @@ const createOrder = async (req, res) => {
     mobile,
     rating: 0.0,
     createdDate: new Date().getDate(),
-    createdMonth: new Date().getMonth()
+    createdMonth: new Date().getMonth(),
+    paymentMode
   });
   await order.save();
 
-  return res.status(200).send(_.pick(order, ['_id', 'items', 'status']))
+  return res.status(200).send(_.pick(order, ['_id', 'items', 'status', 'paymentMode']))
 }
 
 const editOrder = async (req, res) => {
@@ -95,7 +96,8 @@ const getOrders = async (req, res) => {
         'status',
         'address',
         'mobile',
-        'rating'
+        'rating',
+        'paymentMode'
       ]), createdAt: order._id.getTimestamp()
     };
   }))

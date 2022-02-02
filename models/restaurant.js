@@ -48,7 +48,11 @@ const restaurantSchema = new schema({
     menuItems: [{
         type: schema.Types.ObjectId,
         ref: 'MenuItem'
-    }]
+    }],
+    wallet: {
+        type: Number,
+        required: true
+    }
 })
 
 restaurantSchema.methods.generateAuthToken = function () {

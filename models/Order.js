@@ -36,7 +36,12 @@ const orderschema = new schema({
   },
   rating: Number,
   createdMonth: Number,
-  createdDate: Number
+  createdDate: Number,
+  paymentMode: {
+    type: String,
+    required: true,
+    enum: ['COD', 'Card']
+  }
 });
 
 const Order = new mongoose.model('Order', orderschema);
