@@ -2,7 +2,7 @@ const { MenuItem } = require('../models/MenuItem');
 const _ = require('lodash');
 const path = require('path');
 const fs = require('fs');
-const { destroyFile } = require('../Utils/cloudinary');
+const { destroyFile } = require('../utils/cloudinary');
 
 const editMenuItem = async (req, res) => {
   const { id } = req.params;
