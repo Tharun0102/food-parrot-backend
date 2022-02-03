@@ -6,7 +6,7 @@ const _ = require('lodash');
 const saltRounds = 10;
 const path = require('path');
 const fs = require('fs');
-const { destroyFile } = require('../Utils/cloudinary');
+const { destroyFile } = require('../utils/cloudinary');
 
 const registerRestaurant = async (req, res) => {
     const { name, email, password, city, street, zip, imageId } = req.body;
